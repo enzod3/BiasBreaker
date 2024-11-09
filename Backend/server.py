@@ -11,7 +11,7 @@ app = FastAPI()
 load_dotenv()
 
 # Assuming `get_idea` is defined elsewhere in your code
-def get_idea(client, passage: str) -> str:
+async def get_idea(client, passage: str) -> str:
     conversation = [
         {"role": "system",
         "content": "You are a news analyst, skilled in succinctly summarizing passages."},
@@ -41,23 +41,23 @@ class IdeaRequest(BaseModel):
     passage: str
 
 # Dependency function to provide `client`
-def get_client():
+async def get_client():
     return OpenAI()
 
 # returns True if something is bad
-@app.post("/check-passage/")
+# @app.post("/check-passage/")
 async def check_passage(client, passage):
     if not passage:
         raise HTTPException(status_code=400, detail="Passage cannot be empty")
 
     # Call the get_idea function and return the result
-    headline = get_idea(client, passage)
+    headline = await get_idea(client, passage)
 
-    results = await search_politifact(headline)
+    results = await get_best_article(headline)
     if not results.success:
         return json.dumps({
             "result": "false",
-            "title": "",
+         "title": "",
             "url": "",
             "verdict": "",
         })
@@ -71,6 +71,14 @@ async def check_passage(client, passage):
 
 
 
+async def main():
+    client = await get_client()
+    passage = """
+Lyin’ Kamala is giving a News Conference now, saying that I want to end the Affordable Care Act. I never mentioned doing that, never even thought about such a thing. She also said I want to end Social Security. Likewise, never mentioned it, or thought of it. She is the one that wants to end Social Security and, she will do it, by putting the millions of Migrants coming into our Country into it. Kamala is a LIAR! Everything that comes out of her mouth is a LIE. It’s MADE UP FICTION, and she’s doing it because she’s losing, and losing BIG!
+"""
+    res = await check_passage(client, passage)
+    print(res)
+
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    asyncio.run(main)
+
