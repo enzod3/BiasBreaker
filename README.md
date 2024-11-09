@@ -23,8 +23,7 @@ This Chrome extension reads text content on web pages (such as social media feed
 ### Installation
 
 1. **Clone the Repository**:
-2. 
-3. **Backend Setup**:
+2. **Backend Setup**:
    - Navigate to the `backend` folder:
      ```bash
      cd backend
@@ -39,7 +38,7 @@ This Chrome extension reads text content on web pages (such as social media feed
      ```
    This server receives text data from the extension, analyzes it for biases or misleading information, and returns the results to the extension.
 
-4. **Load the Extension in Chrome**:
+3. **Load the Extension in Chrome**:
    - Open Chrome and go to `chrome://extensions/`.
    - Enable **Developer mode** (toggle it on at the top right).
    - Click **Load unpacked** and select the root folder of the project.
