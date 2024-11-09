@@ -4,11 +4,49 @@ from dotenv import load_dotenv
 import os
 
 
-def get_client():
-    return OpenAI()
-
-
-def get_idea(client, passage):
+async def is_claim(client, text: str) -> bool:
+    """
+    Analyzes text to determine if it's a claim (True) or opinion (False) using GPT-4.
+    
+    Args:
+        text (str): The text to analyze
+        client: The OpenAI client instance
+    
+    Returns:
+        bool: True if the text is a claim, False if it's an opinion
+    """
+    # Create the system prompt that defines the task
+    system_prompt = """
+    You are a claim detection system. Analyze the given text and determine if it's a claim or an opinion.
+    A claim is a statement that can be proven true or false with evidence.
+    A claim can also be in the form of "I never..." or "I will...", "He said ...", "She said..."
+    An opinion is a personal view, belief, or judgment.
+    Respond with only 'true' for claims or 'false' for opinions.
+    """
+    
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"Is this a claim? Text: '{text}'"}
+    ]
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0,  # Use low temperature for more consistent results
+            max_tokens=5    # We only need a short response
+        )
+        
+        result = response.choices[0].message.content.strip().lower()
+        
+        # Convert the string response to boolean
+        return result == 'true'
+        
+    except Exception as e:
+        print(f"Error during API call: {str(e)}")
+        raise
+    
+async def get_idea(client, passage: str) -> str:
     conversation = [
         {"role": "system",
         "content": "You are a news analyst, skilled in succinctly summarizing passages."},
@@ -31,24 +69,4 @@ def get_idea(client, passage):
         
         return completion.choices[0].message.content
 
-    else:
-        return "No claim"
-
-load_dotenv()
-
-proxy_url = os.environ.get("OPENAI_PROXY_URL")
-
-client = 
-#  if proxy_url is None or proxy_url == "" else OpenAI(http_client=httpx.Client(proxy=proxy_url))
-
-passage = """
-By the way, if any Trump voters took a wrong turn off the turnpike and have landed here reading me, howdy, and thanks for stopping by. This is information you want to take note of for 2028, whoever your next candidate is. It might save you grief, too.
-"""
-
-print(get_idea(client, passage))
-
-passage = """
-Kamala Harris has spent the better part of two decades in public life notching up a long list of things she was the first to achieve: the first Black woman to be elected district attorney in California history, first woman to be California’s attorney general, first Indian American senator, and now, the first Black woman and first Asian American to be picked as a vice presidential running mate on a major-party ticket.
-"""
-
-print(get_idea(client, passage))
+    return ""

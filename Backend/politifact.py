@@ -3,11 +3,15 @@ from bs4 import BeautifulSoup
 import noble_tls
 from noble_tls import Client
 import re
+import urllib.parse
 
 async def search_politifact(search_query: str):
     # Format search query for URL
-    formatted_query = search_query.replace(' ', '+')
-    url = f'https://www.politifact.com/search/?q={formatted_query}'
+    # formatted_query = search_query.replace(' ', '+')
+    # URL encode the search query
+    search_query = urllib.parse.quote_plus(search_query);
+
+    url = f'https://www.politifact.com/search/?q={search_query}'
     
     # Headers to mimic browser request
     headers = {
@@ -62,7 +66,18 @@ async def search_politifact(search_query: str):
 
 
 def parse_verdict(thumbnail_url):
-    return re.search(r'rulings/([^/]+)/', thumbnail_url).group(1)
+    term = re.search(r'rulings/([^/]+)/', thumbnail_url).group(1)
+
+    verdict_map = {
+        'meter-true': 'true',
+        'meter-mostly-true': 'mostly true', 
+        'meter-half-true': 'half hrue',
+        'meter-mostly-false': 'mostly false',
+        'meter-false': 'false',
+        'tom_ruling_pof': 'very false'
+    }
+    
+    return verdict_map.get(term, 'True')
 
 
 async def get_best_article(search_term):
