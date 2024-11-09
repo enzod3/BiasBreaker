@@ -1,7 +1,10 @@
-const HIGHLIGHT_CLASS = 'highlight-red-border';
+const HIGHLIGHT_CLASS_GREEN = 'highlight-green-border';
+const HIGHLIGHT_CLASS_YELLOW = 'highlight-yellow-border';
+const HIGHLIGHT_CLASS_RED = 'highlight-red-border';
 const MODAL_ID = 'highlight-modal';
 
-// Create and style the modal
+const processedIds = new Set();
+
 function createModal() {
     let modal = document.getElementById(MODAL_ID);
     if (modal) return; // Modal already exists
@@ -24,7 +27,7 @@ function createModal() {
         opacity: '0',
     });
 
-    // Optional: Add a close button inside the modal
+    // Add a close button inside the modal
     const closeButton = document.createElement('span');
     closeButton.innerHTML = '&times;';
     Object.assign(closeButton.style, {
@@ -38,7 +41,7 @@ function createModal() {
     closeButton.addEventListener('click', hideModal);
     modal.appendChild(closeButton);
 
-    // Content area
+    // Content area for title and URL
     const content = document.createElement('div');
     content.id = `${MODAL_ID}-content`;
     modal.appendChild(content);
@@ -46,15 +49,32 @@ function createModal() {
     document.body.appendChild(modal);
 }
 
-// Show the modal above the target element with rewritten text
-function showModal(element, originalText) {
+/**
+ * Displays the modal above the target element with the tweet's title and URL.
+ * @param {HTMLElement} element - The tweet element.
+ */
+function showModal(element) {
     const modal = document.getElementById(MODAL_ID);
     if (!modal) return;
 
-    const rewrittenText = rewriteTweet(originalText);
+    const title = element.getAttribute('data-title') || 'No title available';
+    const url = element.getAttribute('data-url') || '#';
 
     const content = document.getElementById(`${MODAL_ID}-content`);
-    content.innerText = rewrittenText || 'No additional information available.';
+    // Clear previous content
+    content.innerHTML = '';
+
+    // Create and append title element
+    const titleElem = document.createElement('h2');
+    titleElem.innerText = title;
+    content.appendChild(titleElem);
+
+    // Create and append URL element
+    const urlElem = document.createElement('a');
+    urlElem.href = url;
+    urlElem.target = '_blank';
+    urlElem.innerText = url;
+    content.appendChild(urlElem);
 
     modal.style.display = 'block';
     modal.style.opacity = '1';
@@ -80,7 +100,9 @@ function showModal(element, originalText) {
     modal.style.left = `${left}px`;
 }
 
-// Hide the modal
+/**
+ * Hides the modal with a fade-out effect.
+ */
 function hideModal() {
     const modal = document.getElementById(MODAL_ID);
     if (modal) {
@@ -91,15 +113,10 @@ function hideModal() {
     }
 }
 
-// Function to rewrite the tweet's text
-function rewriteTweet(text) {
-    // Placeholder for actual rewriting logic
-    // For demonstration, let's reverse the text
-    return text.split('').reverse().join('');
-    // You can replace the above line with any text processing logic you need
-}
-
-// Assign unique IDs and set up hover listeners
+/**
+ * Assigns unique IDs to tweet elements and sets up hover listeners to show the modal.
+ * @param {HTMLElement[]} elements - Array of tweet elements.
+ */
 function assignUniqueIds(elements) {
     elements.forEach((element) => {
         if (!element.id) {
@@ -109,30 +126,63 @@ function assignUniqueIds(elements) {
             console.log(`Tweet container already has ID: ${element.id}`);
         }
 
+        // Set up hover listeners
         element.addEventListener('mouseenter', () => {
-            const tweetText = element.innerText || element.textContent || '';
-            showModal(element, tweetText);
+            showModal(element);
         });
-
     });
 }
 
-function highlightElements(ids) {
-    ids.forEach(id => {
+/**
+ * Maps the verdict to the corresponding CSS class.
+ * @param {string} verdict - The verdict string from the backend.
+ * @returns {string} - The CSS class name.
+ */
+function getClassByVerdict(verdict) {
+    const mapping = {
+        'true': HIGHLIGHT_CLASS_GREEN,
+        'mostly true': HIGHLIGHT_CLASS_GREEN,
+        'half true': HIGHLIGHT_CLASS_YELLOW,
+        'mostly false': HIGHLIGHT_CLASS_YELLOW,
+        'false': HIGHLIGHT_CLASS_RED,
+        'very false': HIGHLIGHT_CLASS_RED,
+        'partially true': 'highlight-orange-border', // Example for orange
+    };
+    return mapping[verdict.toLowerCase()] || HIGHLIGHT_CLASS_RED; // Default to red if unknown
+}
+
+/**
+ * Highlights elements by adding appropriate classes based on verdict and sets data attributes for modal.
+ * @param {Object[]} matchingElements - Array of matching elements with id, title, url, and verdict.
+ */
+function highlightElements(matchingElements) {
+    matchingElements.forEach(elem => {
         try {
-            const element = document.getElementById(id);
+            const element = document.getElementById(elem.id);
             if (element) {
-                element.classList.add(HIGHLIGHT_CLASS);
-                console.log(`Highlighted tweet with ID: ${id}`);
+                // Determine the class based on verdict
+                const verdictClass = getClassByVerdict(elem.verdict);
+                element.classList.add(verdictClass);
+                console.log(`Highlighted tweet with ID: ${elem.id} using class: ${verdictClass}`);
+
+                // Set data attributes for modal
+                element.setAttribute('data-title', elem.title || 'No Title');
+                element.setAttribute('data-url', elem.url || '#');
             } else {
-                console.warn(`Element with ID ${id} not found.`);
+                console.warn(`Element with ID ${elem.id} not found.`);
             }
         } catch (error) {
-            console.error('Error highlighting element:', error, 'ID:', id);
+            console.error('Error highlighting element:', error, 'ID:', elem.id);
         }
     });
 }
 
+/**
+ * Debounce utility to limit the rate at which a function can fire.
+ * @param {Function} func - The function to debounce.
+ * @param {number} delay - Delay in milliseconds.
+ * @returns {Function} - Debounced function.
+ */
 function debounce(func, delay) {
     let timeout;
     return function(...args) {
@@ -141,23 +191,47 @@ function debounce(func, delay) {
     };
 }
 
+/**
+ * Sends collected tweet elements to the background script for processing.
+ * @param {HTMLElement[]} elements - Array of tweet elements.
+ */
 function sendDataToBackground(elements) {
-    console.log(elements)
-    const dataToSend = elements.map(el => ({
-        id: el.id,
-        tag: el.tagName.toLowerCase(),
-        text: el.innerText || el.textContent || ""
-    }));
+    console.log(elements);
+    const dataToSend = elements
+        .filter(el => {
+            if (processedIds.has(el.id)) {
+                console.log(`Skipping already processed tweet ID: ${el.id}`);
+                return false;
+            }
+            return true;
+        })
+        .map(el => ({
+            id: el.id,
+            tag: el.tagName.toLowerCase(),
+            text: el.innerText || el.textContent || ""
+        }));
+
+    if (dataToSend.length === 0) {
+        console.log('No new elements to send to backend.');
+        return;
+    }
+
     console.log('Sending elements to backend:', dataToSend);
 
     chrome.runtime.sendMessage({
         type: 'process_elements',
         elements: dataToSend,
-        target_word: "Trump",
-        min_word_count: 10
+        min_word_count: 10 // Removed 'target_word' as per the new backend logic
     });
+
+    // Add the IDs to the processedIds set to prevent re-processing
+    dataToSend.forEach(el => processedIds.add(el.id));
 }
 
+
+/**
+ * Listener for messages from the background script.
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'highlight_ids') {
         console.log('Received IDs to highlight:', request.ids);
@@ -168,10 +242,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+/**
+ * Utility function to pause execution for a given number of milliseconds.
+ * @param {number} ms - Milliseconds to sleep.
+ * @returns {Promise} - Promise that resolves after the specified time.
+ */
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Collects relevant tweet elements from mutation records.
+ * @param {MutationRecord[]} mutationsList - List of mutation records.
+ * @returns {HTMLElement[]} - Array of new tweet elements.
+ */
 function collectRelevantElements(mutationsList) {
     const newElements = [];
     const tweetSelector = "[data-testid='tweetText']";
@@ -205,6 +289,9 @@ function collectRelevantElements(mutationsList) {
     return newElements;
 }
 
+/**
+ * Sets up a MutationObserver to monitor for new tweet elements.
+ */
 function setupTwitterMutationObserver() {
     console.log("MutationObserver: Setup started");
 
@@ -231,6 +318,9 @@ function setupTwitterMutationObserver() {
     console.log("MutationObserver: Setup complete");
 }
 
+/**
+ * Main function executed on page load.
+ */
 async function main() {
     console.log('Page loaded. Waiting for 3 seconds before sending initial request...');
 
@@ -251,5 +341,6 @@ async function main() {
     createModal();
 }
 
+// Initialize the script once the window has fully loaded
 window.addEventListener('load', main);
 

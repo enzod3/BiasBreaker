@@ -1,12 +1,52 @@
-
+/* Highlight Red Border */
 .highlight-red-border {
     border: 2px solid red !important;
-    background-color: rgba(255, 0, 0, 0.1) !important;
+    background-color: rgba(255, 0, 0, 0.1) !important; /* Light red background */
     box-sizing: border-box !important;
-    transition: border 0.3s ease, background-color 0.3s ease !important; }
+    transition: border 0.3s ease, background-color 0.3s ease !important;
+}
 
 .highlight-red-border:hover {
     border: 2px solid red !important;
-    background-color: rgba(255, 0, 0, 0.15) !important;
+    background-color: rgba(255, 0, 0, 0.15) !important; /* Slightly darker red on hover */
+}
+
+/* Highlight Yellow Border */
+.highlight-yellow-border {
+    border: 2px solid yellow !important;
+    background-color: rgba(255, 255, 0, 0.1) !important; /* Light yellow background */
+    box-sizing: border-box !important;
+    transition: border 0.3s ease, background-color 0.3s ease !important;
+}
+
+.highlight-yellow-border:hover {
+    border: 2px solid yellow !important;
+    background-color: rgba(255, 255, 0, 0.15) !important; /* Slightly darker yellow on hover */
+}
+
+/* Highlight Green Border */
+.highlight-green-border {
+    border: 2px solid green !important;
+    background-color: rgba(0, 128, 0, 0.1) !important; /* Light green background */
+    box-sizing: border-box !important;
+    transition: border 0.3s ease, background-color 0.3s ease !important;
+}
+
+.highlight-green-border:hover {
+    border: 2px solid green !important;
+    background-color: rgba(0, 128, 0, 0.15) !important; /* Slightly darker green on hover */
+}
+
+/* Highlight Orange Border */
+.highlight-orange-border {
+    border: 2px solid orange !important;
+    background-color: rgba(255, 165, 0, 0.1) !important; /* Light orange background */
+    box-sizing: border-box !important;
+    transition: border 0.3s ease, background-color 0.3s ease !important;
+}
+
+.highlight-orange-border:hover {
+    border: 2px solid orange !important;
+    background-color: rgba(255, 165, 0, 0.15) !important; /* Slightly darker orange on hover */
 }
 
