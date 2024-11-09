@@ -2,6 +2,7 @@ import asyncio
 from bs4 import BeautifulSoup
 import noble_tls
 from noble_tls import Client
+import re
 
 async def search_politifact(search_query: str):
     # Format search query for URL
@@ -29,11 +30,11 @@ async def search_politifact(search_query: str):
         response = await session.get(url, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Find the main content article
-        content = soup.find('article', class_='o-platform__content')
-        print(content)
+        # Find all content articles
+        content_sections = soup.find_all('article', class_='o-platform__content')
+        
         results = []
-        if content:
+        for content in content_sections:
             # Find all items in the list
             items = content.find_all('div', class_='o-listease__item')
             
@@ -59,17 +60,35 @@ async def search_politifact(search_query: str):
         print(f"Error occurred: {e}")
         return []
 
-# Example usage
+
+def parse_verdict(thumbnail_url):
+    return re.search(r'rulings/([^/]+)/', thumbnail_url).group(1)
+
+
+async def get_best_article(search_term):
+    results =await search_politifact(search_term)
+    if len(results) > 0:
+        return {
+            "success":True,
+            "title": results[0]['title'],
+            "url": results[0]['url'],
+            "verdict": parse_verdict(results[0]['thumbnail_url'])
+                } 
+    else:
+        return{
+            "success":False,
+            "title": None,
+            "url": None, 
+            "verdict": None,
+                }
+        
 async def main():
-    search_term = "kamala fakes phone call"
-    results = await search_politifact(search_term)
+    search_term = input()#"kamala fakes phone call"
+    result = await get_best_article(search_term)
+
+
+    print(result)
     
-    for result in results:
-        print("\nArticle Found:")
-        print(f"Title: {result['title']}")
-        print(f"URL: {result['url']}")
-        print(f"Thumbnail: {result['thumbnail_url']}")
-        print("-" * 50)
 
 if __name__ == "__main__":
     asyncio.run(main())
