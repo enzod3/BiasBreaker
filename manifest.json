@@ -1,34 +1,23 @@
-
 {
   "manifest_version": 3,
-  "name": "Test",
-  "version": "1.0.0",
-  "description": "Reverse text.",
-  "icons": {
-  },
-  "action": {
-    "default_popup": "frontend/popup/popup.html",
-    "default_icon": {
-    }
-  },
+  "name": "Content Highlighter",
+  "version": "1.2",
+  "description": "Highlights specific elements containing more than 10 words with a red border.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "http://localhost:5000/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
-  "options_page": "frontend/options/options.html",
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
-  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["frontend/content/content.js"],
-      "css": ["frontend/content/content.css"]
+      "js": ["content.js"],
+      "css": ["styles.css"]
     }
   ],
-  "host_permissions": [
-    "http://localhost:5000/*"
-  ]
+  "icons": {
+  }
 }
 
