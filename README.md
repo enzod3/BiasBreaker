@@ -18,7 +18,7 @@ This Chrome extension reads text content on web pages (such as social media feed
 
 - Chrome Browser
 - [Node.js](https://nodejs.org)
-- Flask
+- Python 3.9x+, Flask
 
 ### Installation
 
