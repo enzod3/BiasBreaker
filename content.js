@@ -27,7 +27,6 @@ function createModal() {
         opacity: '0',
     });
 
-    // Add a close button inside the modal
     const closeButton = document.createElement('span');
     closeButton.innerHTML = '&times;';
     Object.assign(closeButton.style, {
@@ -41,7 +40,6 @@ function createModal() {
     closeButton.addEventListener('click', hideModal);
     modal.appendChild(closeButton);
 
-    // Content area for title and URL
     const content = document.createElement('div');
     content.id = `${MODAL_ID}-content`;
     modal.appendChild(content);
@@ -49,10 +47,6 @@ function createModal() {
     document.body.appendChild(modal);
 }
 
-/**
- * Displays the modal above the target element with the tweet's title and URL.
- * @param {HTMLElement} element - The tweet element.
- */
 function showModal(element) {
     const modal = document.getElementById(MODAL_ID);
     if (!modal) return;
@@ -61,15 +55,12 @@ function showModal(element) {
     const url = element.getAttribute('data-url') || '#';
 
     const content = document.getElementById(`${MODAL_ID}-content`);
-    // Clear previous content
     content.innerHTML = '';
 
-    // Create and append title element
     const titleElem = document.createElement('h2');
     titleElem.innerText = title;
     content.appendChild(titleElem);
 
-    // Create and append URL element
     const urlElem = document.createElement('a');
     urlElem.href = url;
     urlElem.target = '_blank';
@@ -82,16 +73,13 @@ function showModal(element) {
     const rect = element.getBoundingClientRect();
     const modalRect = modal.getBoundingClientRect();
 
-    // Calculate position to place the modal above the element
     let top = rect.top + window.scrollY - modalRect.height - 10; // 10px above
     let left = rect.left + window.scrollX;
 
-    // Ensure the modal doesn't go off the top of the viewport
     if (top < window.scrollY) {
         top = rect.bottom + window.scrollY + 10; // Place below if not enough space above
     }
 
-    // Ensure the modal doesn't go off the right of the viewport
     if (left + modalRect.width > window.innerWidth) {
         left = window.innerWidth - modalRect.width - 20; // 20px margin from the edge
     }
@@ -100,9 +88,6 @@ function showModal(element) {
     modal.style.left = `${left}px`;
 }
 
-/**
- * Hides the modal with a fade-out effect.
- */
 function hideModal() {
     const modal = document.getElementById(MODAL_ID);
     if (modal) {
@@ -113,10 +98,6 @@ function hideModal() {
     }
 }
 
-/**
- * Assigns unique IDs to tweet elements and sets up hover listeners to show the modal.
- * @param {HTMLElement[]} elements - Array of tweet elements.
- */
 function assignUniqueIds(elements) {
     elements.forEach((element) => {
         if (!element.id) {
@@ -126,18 +107,12 @@ function assignUniqueIds(elements) {
             console.log(`Tweet container already has ID: ${element.id}`);
         }
 
-        // Set up hover listeners
         element.addEventListener('mouseenter', () => {
             showModal(element);
         });
     });
 }
 
-/**
- * Maps the verdict to the corresponding CSS class.
- * @param {string} verdict - The verdict string from the backend.
- * @returns {string} - The CSS class name.
- */
 function getClassByVerdict(verdict) {
     const mapping = {
         'true': HIGHLIGHT_CLASS_GREEN,
@@ -151,21 +126,15 @@ function getClassByVerdict(verdict) {
     return mapping[verdict.toLowerCase()] || HIGHLIGHT_CLASS_RED; // Default to red if unknown
 }
 
-/**
- * Highlights elements by adding appropriate classes based on verdict and sets data attributes for modal.
- * @param {Object[]} matchingElements - Array of matching elements with id, title, url, and verdict.
- */
 function highlightElements(matchingElements) {
     matchingElements.forEach(elem => {
         try {
             const element = document.getElementById(elem.id);
             if (element) {
-                // Determine the class based on verdict
                 const verdictClass = getClassByVerdict(elem.verdict);
                 element.classList.add(verdictClass);
                 console.log(`Highlighted tweet with ID: ${elem.id} using class: ${verdictClass}`);
 
-                // Set data attributes for modal
                 element.setAttribute('data-title', elem.title || 'No Title');
                 element.setAttribute('data-url', elem.url || '#');
             } else {
@@ -177,12 +146,6 @@ function highlightElements(matchingElements) {
     });
 }
 
-/**
- * Debounce utility to limit the rate at which a function can fire.
- * @param {Function} func - The function to debounce.
- * @param {number} delay - Delay in milliseconds.
- * @returns {Function} - Debounced function.
- */
 function debounce(func, delay) {
     let timeout;
     return function(...args) {
@@ -191,10 +154,6 @@ function debounce(func, delay) {
     };
 }
 
-/**
- * Sends collected tweet elements to the background script for processing.
- * @param {HTMLElement[]} elements - Array of tweet elements.
- */
 function sendDataToBackground(elements) {
     console.log(elements);
     const dataToSend = elements
@@ -224,14 +183,10 @@ function sendDataToBackground(elements) {
         min_word_count: 10 // Removed 'target_word' as per the new backend logic
     });
 
-    // Add the IDs to the processedIds set to prevent re-processing
     dataToSend.forEach(el => processedIds.add(el.id));
 }
 
 
-/**
- * Listener for messages from the background script.
- */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'highlight_ids') {
         console.log('Received IDs to highlight:', request.ids);
@@ -242,20 +197,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-/**
- * Utility function to pause execution for a given number of milliseconds.
- * @param {number} ms - Milliseconds to sleep.
- * @returns {Promise} - Promise that resolves after the specified time.
- */
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * Collects relevant tweet elements from mutation records.
- * @param {MutationRecord[]} mutationsList - List of mutation records.
- * @returns {HTMLElement[]} - Array of new tweet elements.
- */
 function collectRelevantElements(mutationsList) {
     const newElements = [];
     const tweetSelector = "[data-testid='tweetText']";
@@ -289,9 +234,6 @@ function collectRelevantElements(mutationsList) {
     return newElements;
 }
 
-/**
- * Sets up a MutationObserver to monitor for new tweet elements.
- */
 function setupTwitterMutationObserver() {
     console.log("MutationObserver: Setup started");
 
@@ -318,9 +260,6 @@ function setupTwitterMutationObserver() {
     console.log("MutationObserver: Setup complete");
 }
 
-/**
- * Main function executed on page load.
- */
 async function main() {
     console.log('Page loaded. Waiting for 3 seconds before sending initial request...');
 
@@ -341,6 +280,5 @@ async function main() {
     createModal();
 }
 
-// Initialize the script once the window has fully loaded
 window.addEventListener('load', main);
 
