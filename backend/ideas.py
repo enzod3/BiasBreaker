@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 import os
 
 
+def get_client():
+    return OpenAI()
+
+
 def get_idea(client, passage):
     conversation = [
         {"role": "system",
@@ -34,7 +38,7 @@ load_dotenv()
 
 proxy_url = os.environ.get("OPENAI_PROXY_URL")
 
-client = OpenAI()
+client = 
 #  if proxy_url is None or proxy_url == "" else OpenAI(http_client=httpx.Client(proxy=proxy_url))
 
 passage = """
